@@ -1,0 +1,14 @@
+initialize project 
+create express app
+//packages to install
+express
+cors
+mongoose
+nodemon
+dotenv
+axios
+
+//auth
+jsonwebtoken
+bcrypt
+nodemailer
