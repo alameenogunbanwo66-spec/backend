@@ -1,7 +1,7 @@
 const USER = require("../Models/User")
 const JWT = require("jsonwebtoken")
 const bcrypt = require("bcrypt")
-const { sendWelcomeEmail } = require("../Utils/sendEmail")
+const { sendWelcomeEmail, sendResetPasswordMail } = require("../Utils/sendEmail")
 
 //Generate JsonWebToken
 const generateToken = ({userId, email })=>{
@@ -69,6 +69,13 @@ const signup = async (req, res) => {
             homePageUrl,
             email : user.email
         })
+        //   if (process.env.NODE_ENV === "production") {
+        //     await sendWelcomeEmail({
+        //     firstName : user.firstName,
+        //     homePageUrl,
+        //     email : user.email
+        // })
+        // }
 
         res.status(201).json({ success : true, message : "User created successfully", token, user : { id : user._id, firstName: user.firstName, lastName : user.lastName, email : user.email, phoneNumber : user.phoneNumber}})
     } catch (error) {
@@ -134,5 +141,74 @@ const signin = async (req,res)=>{
     }
 }
 
-module.exports = {signup, signin}
+const forgotPassword = async (req,res) => {
+    console.log("forgot password route hit");
+    const { email } = req.body;
+    console.log(req.body);
+
+    //validate email and find user
+    try {
+        if (!email) {
+            return res.status(400).json({ success : false, message : "Please provide an email"})
+        }
+        const user = await USER.findOne({ email })
+        if (!user) {
+            return res.status(404).json({ success : false, message : "No user found with this email"})
+        }
+        //create a new session token for user
+        const resetToken = generateToken({userId : user._id, email : user.email})
+        user.resetToken = resetToken
+        user.resetTokenExpiry = Date.now() + 15 * 60 * 1000; //15mins
+        await user.save()
+
+        const homePageUrl = `${process.env.FRONTEND_URL}`
+        const resetLink = `${process.env.FRONTEND_URL}/resetPassword/${resetToken}`
+
+        await sendResetPasswordMail({
+            firstName : user.firstName,
+            homePageUrl,
+            email : user.email,
+            resetLink
+        })
+
+        res.status(200).json({ success : true , message : "Password reset link sent to your email", resetToken})
+    } catch (error) {
+        console.log(error, "Error sending email")
+        res.status(500).json({ success : false, message : "Something went wrong, failed to send email", error : error.message})
+    }
+    
+}
+
+const resetPassword = async (req, res) => {
+    console.log("Password reset route hit");
+    const { password } = req.body
+    console.log(req.body);
+    const { token } = req.params
+    console.log(token);
+
+//   console.log("Password reset route hit at:", req.originalUrl);
+//   console.log("Token received:", req.params.token);
+//   console.log("Body received:", req.body);
+
+
+    try {
+        if (!password) {
+            return res.status(400).json({ success : false, message : "Please provide a password"})
+        }
+         if (!token) {
+            return res.status(400).json({ success : false, message : "Invalid or expired token"})
+        }
+        const decoded = JWT.verify(token, process.env.JWT_SECRET)
+        const userId = decoded.id
+        console.log("Received token :", token);
+        const hashedPassword = await bcrypt.hash(password, 12)
+        await USER.findByIdAndUpdate(userId, { password : hashedPassword, resetToken : null, resetTokenExpiry : null })
+        return res.status(200).json({ message : "Password reset successful"})
+    } catch (error) {
+        console.log(error.message);
+        return res.status(400).json({ message : "Invalid or expired token"})
+    }
+    
+}
+module.exports = {signup, signin, forgotPassword, resetPassword }
 
