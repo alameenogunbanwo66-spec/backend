@@ -14,7 +14,7 @@ const adminRouter = require("./Routes/adminRoute")
 //middlewares
 app.use(express.json())
 app.use(cors({
-    origin: ["http://localhost:5173"],
+    origin: ["http://localhost:5173", "https://fontend-nine-delta.vercel.app"],
     credentials : true
 }))
 
