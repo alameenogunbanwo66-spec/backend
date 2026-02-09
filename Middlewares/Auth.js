@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
+const USER = require("../Models/User")
 
-exports.auth = (req, res, next) => {
+exports.auth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(" ")[1];
 
@@ -10,7 +11,10 @@ exports.auth = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+     const user = await USER.findById(decoded.id); // make sure JWT has "id"
+    if (!user) return res.status(401).json({ message: "Unauthorized. User not found." });
+
+    req.user = user;
     console.log("Decoded token:", decoded);
     next();
   } catch (err) {
@@ -36,4 +40,7 @@ exports.isAdmin = (req, res, next) => {
   }
   next();
 };
-
+exports.isUser = (req, res, next) => {
+  if (req.user.role !== "user") return res.status(403).json({ message: "Forbidden" });
+  next();
+};

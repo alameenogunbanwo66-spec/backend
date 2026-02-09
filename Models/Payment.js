@@ -9,7 +9,10 @@ const paymentSchema = new mongoose.Schema(
       required: true,
     },
 
-    method: String,
+    paymentMethod: { 
+        type: String,
+        required: true,
+        enum : ["delivery", "creditcard", "paypal", "paystack"] },
 
     amount: Number,
 

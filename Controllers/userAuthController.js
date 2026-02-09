@@ -4,14 +4,15 @@ const bcrypt = require("bcrypt")
 const { sendWelcomeEmail, sendResetPasswordMail } = require("../Utils/sendEmail")
 
 //Generate JsonWebToken
-const generateToken = ({userId, email, role })=>{
-    const token = JWT.sign({ id : userId, email, role}, process.env.JWT_SECRET, {
-        expiresIn : "15m"
-    })
-    console.log(token)
+const generateToken = (user) => {
+  const { _id, email, role } = user;
+  const token = JWT.sign({ id: _id, email, role }, process.env.JWT_SECRET, {
+    expiresIn: "1d",
+  });
+  console.log(token);
+  return token;
+};
 
-    return token;
-}
 
 //SIGN UP / REGISTER FLOW
 //get access to the request --- req-body
@@ -61,7 +62,7 @@ const signup = async (req, res) => {
         })
         await user.save()
 
-        const token = generateToken({ userId : user._id, email : user.email, role : user.role})
+        const token = generateToken(user)
 
         const homePageUrl = `${process.env.FRONTEND_URL}`
         await sendWelcomeEmail({
@@ -116,7 +117,7 @@ const signin = async (req,res)=>{
         }
         
         //create session token
-        const token = generateToken({userId : user._id, email : user.email, role : user.role})
+        const token = generateToken(user)
 
         res.status(200).json({
             success : true,
@@ -157,7 +158,7 @@ const forgotPassword = async (req,res) => {
             return res.status(404).json({ success : false, message : "No user found with this email"})
         }
         //create a new session token for user
-        const resetToken = generateToken({userId : user._id, email : user.email})
+        const resetToken = generateToken(user)
         user.resetToken = resetToken
         user.resetTokenExpiry = Date.now() + 15 * 60 * 1000; //15mins
         await user.save()

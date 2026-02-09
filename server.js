@@ -5,6 +5,11 @@ const dotenv = require("dotenv")
 dotenv.config()
 const mongoose = require("mongoose")
 const userAuthRouter = require("./Routes/userAuthRoutes")
+const productRouter = require("./Routes/productRoutes")
+const orderRoutes = require("./Routes/OrderRoute")
+const paymentRoutes = require("./Routes/PaymentRoute");
+const webhookRoutes = require("./Routes/webhook")
+const adminRouter = require("./Routes/adminRoute")
 
 //middlewares
 app.use(express.json())
@@ -22,7 +27,11 @@ app.get("/", (req,res)=>{
 })
 
 app.use("/api/user/auth", userAuthRouter)
-app.use("/api/admin", require("./Routes/adminRoute"));
+app.use("/api/admin", adminRouter);
+app.use("/api/products", productRouter)
+app.use("/api/orders", orderRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/webhooks", webhookRoutes);
 
 const startServer = async () => {
     try {

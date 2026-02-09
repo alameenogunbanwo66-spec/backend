@@ -1,13 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const { auth, isAdmin, authorizeRoles } = require("../Middlewares/Auth.js");
+const { auth, isAdmin } = require("../Middlewares/Auth.js");
+const adminController = require("../Controllers/AdminController");
+const { upload } = require("../Config/cloudinaryConfig");
 
-router.get("/admin/dashboard", auth, isAdmin, (req, res) => {
+
+// Admin dashboard
+router.get("/dashboard", auth, isAdmin, (req, res) => {
   res.json({ message: "Welcome to the Admin Dashboard" });
 });
 
-// router.get("/admin/settings", auth, authorizeRoles("admin"), (req, res) => {
-//   res.json({ message: "Admin Settings Page" });
-// });
+// Products management
+router.get("/products", auth, isAdmin, adminController.getProducts);
+router.post("/products", auth, isAdmin, upload.single("image"), adminController.addProduct);
+router.put("/products/:id", auth, isAdmin, upload.single("image"), adminController.updateProduct);
+router.delete("/products/:id", auth, isAdmin, adminController.deleteProduct);
+
 
 module.exports = router;
